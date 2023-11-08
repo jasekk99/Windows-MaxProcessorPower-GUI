@@ -74,14 +74,21 @@ $form.Width = 800
 ###Set height
 $form.Height = 300
 
-Write-Host ('test')
+
+$barText = New-Object Windows.Forms.Text
+$barText.Size = New-Object System.Drawing.Size(40, 30)
+$barText.Location = New-Object System.Drawing.Point(40, 20)
+
 
 #Create Progress Bars
 $barAC = New-Object Windows.Forms.ProgressBar
-$barAC.Dock = [Windows.Forms.DockStyle]::Top
+$barAC.Size = New-Object System.Drawing.Size(250, 30)
+$barAC.Location = New-Object System.Drawing.Point(50, 20)
 
 $barDC = New-Object Windows.Forms.ProgressBar
-$barDC.Dock = [Windows.Forms.DockStyle]::Bottom
+$barDC.Size = New-Object System.Drawing.Size(250, 30)
+$barDC.Location = New-Object System.Drawing.Point(50, 60)
+
 
 # Create a timer to update the progress bar
 $timer = New-Object Windows.Forms.Timer
@@ -93,7 +100,11 @@ $timer.Add_Tick({
 
     # Update the progress bar value
     $barAC.Value = $progressValueAC
+    $barAC.Text = $progressValueAC.ToString()
+
     $barDC.Value = $progressValueDC
+    $barDC.Text = $progressValueDC.ToString()
+
 
 
     # Check if the progress is complete and stop the timer if needed
