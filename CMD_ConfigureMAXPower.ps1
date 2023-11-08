@@ -55,94 +55,75 @@ function Get-CurrentPROCTHROTTLEMAX([string]$mode) {
     }
 }
 
+$currentPROCTHROTTLEMAXValue_AC = Get-CurrentPROCTHROTTLEMAX('AC')
+$currentPROCTHROTTLEMAXValue_DC = Get-CurrentPROCTHROTTLEMAX('DC')
 
-
-#POWERSHELL GUI
-$maxProgressSteps = 100
-
-
-##Create window that contains all the GUI elements
-$form = [Form] @{
-  Text = "TRANSFER RATE"; Size = [Size]::new(600, 200); StartPosition = 'CenterScreen'; TopMost = $true; MinimizeBox = $false; MaximizeBox = $false; FormBorderStyle = 'FixedSingle'
+switch ($currentPROCTHROTTLEMAXValue_AC) {
+    {$_ -ge 1 -and $_ -le 25} {
+        $currPowerColor_AC = "Red"
+    }
+    {$_ -ge 26 -and $_ -le 50}{
+        $currPowerColor_AC = "Orange"
+    }
+    {$_ -ge 51 -and $_ -le 75}{
+        $currPowerColor_AC = "Yellow"
+    }
+    {$_ -ge 76 -and $_ -le 100}{
+        $currPowerColor_AC = "Green"
+    }
+    default{
+        $currPowerColor_AC = "Green"
+    }
 }
 
-##Set title and size of the form
-###Set title
-$form.Text ='Set Processor MAX - ©Jack Green'
-###Set width
-$form.Width = 800
-###Set height
-$form.Height = 300
-
-
-$barText = New-Object Windows.Forms.Text
-$barText.Size = New-Object System.Drawing.Size(40, 30)
-$barText.Location = New-Object System.Drawing.Point(40, 20)
-
-
-#Create Progress Bars
-$barAC = New-Object Windows.Forms.ProgressBar
-$barAC.Size = New-Object System.Drawing.Size(250, 30)
-$barAC.Location = New-Object System.Drawing.Point(50, 20)
-
-$barDC = New-Object Windows.Forms.ProgressBar
-$barDC.Size = New-Object System.Drawing.Size(250, 30)
-$barDC.Location = New-Object System.Drawing.Point(50, 60)
-
-
-# Create a timer to update the progress bar
-$timer = New-Object Windows.Forms.Timer
-$timer.Interval = 2000  # Milliseconds (adjust as needed)
-$timer.Add_Tick({
-    # Call your function to get the progress value (replace with your function)
-    $progressValueAC = Get-CurrentPROCTHROTTLEMAX('AC')
-    $progressValueDC = Get-CurrentPROCTHROTTLEMAX('DC')
-
-    # Update the progress bar value
-    $barAC.Value = $progressValueAC
-    $barAC.Text = $progressValueAC.ToString()
-
-    $barDC.Value = $progressValueDC
-    $barDC.Text = $progressValueDC.ToString()
-
-
-
-    # Check if the progress is complete and stop the timer if needed
-    <#if ($progressValueAC -ge 100) {
-        $timer.Stop()
-    }#>
-})
-
-# Add the progress bar to the form
-$form.Controls.Add($barAC)
-$form.Controls.Add($barDC)
-
-
-# Enable the timer when the form loads.
-$form.add_Load({
-  $timer.Enabled = $true
-})
-
-
-
-
-
-
-
-if ($UserInput_ACPercent){
-    #Set Processor MAX in % (On AC Power)
-    powercfg -setacvalueindex $asGuid $SubProcessor_Guid $procthrottlemax_Guid $UserInput_ACPercent
+switch ($currentPROCTHROTTLEMAXValue_DC) {
+    {$_ -ge 1 -and $_ -le 25} {
+        $currPowerColor_DC = "Red"
     }
-if ($UserInput_BattPercent){
-    #Set Processor MAX in % (On Battery Power)
-    powercfg -setdcvalueindex $asGuid $SubProcessor_Guid $procthrottlemax_Guid $UserInput_BattPercent
+    {$_ -ge 26 -and $_ -le 50}{
+        $currPowerColor_DC = "Orange"
     }
+    {$_ -ge 51 -and $_ -le 75}{
+        $currPowerColor_DC = "Yellow"
+    }
+    {$_ -ge 76 -and $_ -le 100}{
+        $currPowerColor_DC = "Green"
+    }
+    default{
+        $currPowerColor_DC = "Green"
+    }
+}
 
-##automatically stretch the form if the elements on the form are outside the form boundaries
-$form.AutoSize = $true
-##Display the form on the screen
-$form.ShowDialog()
+Write-Host "Current CPU power settings:" -ForegroundColor DarkGray
 
-# Getting here means that the form was closed.
-# Clean up.
-$timer.Dispose(); $form.Dispose()
+
+Write-Host "    Power (AC):     " -ForegroundColor DarkGray -NoNewline
+Write-Host $currentPROCTHROTTLEMAXValue_AC -ForegroundColor $currPowerColor_AC
+
+Write-Host "    Battery (DC):   " -ForegroundColor DarkGray -NoNewline
+Write-Host $currentPROCTHROTTLEMAXValue_DC -ForegroundColor $currPowerColor_DC
+
+
+do{
+$BATorAC = Read-Host "Do you want to change power on Battery or AC? [A]C / [B]attery"
+    if(-not ($BATorAC -match '^[A-Ba-b]$')){
+        Write-Host "Invalid letter, please input either A or B" -BackgroundColor red
+        [Console]::ResetColor()
+    }
+} while (-not ($BATorAC -match '^[A-Ba-b]$'))
+
+do{
+$UserInput_Percent = Read-Host "Power %?"
+    if(-not ($UserInput_Percent -match '^\d+$' -and $UserInput_Percent -ge 1 -and $UserInput_Percent -le 100)){
+        Write-Host "Invalid number, please input a number in range 1-100!" -BackgroundColor red
+        [Console]::ResetColor()
+    }
+} while (-not ($UserInput_Percent -match '^\d+$' -and $UserInput_Percent -ge 1 -and $UserInput_Percent -le 100))
+
+switch ($BATorAC)
+    {
+        "b" {powercfg -setdcvalueindex $asGuid $SubProcessor_Guid $procthrottlemax_Guid $UserInput_Percent}
+        "B" {powercfg -setdcvalueindex $asGuid $SubProcessor_Guid $procthrottlemax_Guid $UserInput_Percent}
+        "a" {powercfg -setacvalueindex $asGuid $SubProcessor_Guid $procthrottlemax_Guid $UserInput_Percent}
+        "A" {powercfg -setacvalueindex $asGuid $SubProcessor_Guid $procthrottlemax_Guid $UserInput_Percent}
+    }
